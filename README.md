@@ -36,6 +36,10 @@ $ python3 UPYRPC_cli.py --port /dev/ttyACM0 adc --100
        UPYRPC_cli.py   INFO  174 True {'success': True, 'value': {'value': 1.20315, 'samples': 1}, 'method': 'adc_read'}
        UPYRPC_cli.py   INFO  329 all tests passed
 ```
+4. Run all the tests,
+```
+$ python3 UPYRPC_cli.py --port /dev/ttyACM0 --all
+```
 
 ## Usage
 

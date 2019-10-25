@@ -103,16 +103,17 @@ def test_led_toggle(args, pyb):
 
     if all or args.t100:
         # This is an example of how to execute non-blocking, long running async task
-        # using the server.cmd({}) interface
+        # using the server.cmd({}) interface, NORMALLY we would use the wrapped versions,
+        # and NOT construct commands ourselves...
         did_something = True
         logging.info("T100: Toggle Red LED with raw commands...")
 
-        cmds = ["upyb_server_01.server.cmd({{'method': 'led_toggle', 'args': {{ 'led': {} }} }})".format(pyb.LED_RED)]
+        cmds = ["upyrpc_main.upyrpc.cmd({{'method': 'led_toggle', 'args': {{ 'led': {} }} }})".format(LED_RED)]
 
         success, result = pyb.server_cmd(cmds, repl_enter=False, repl_exit=False)
         logging.info("{} {}".format(success, result))
 
-        cmds = ["upyb_server_01.server.ret(method='led_toggle')"]
+        cmds = ["upyrpc_main.upyrpc.ret(method='led_toggle')"]
 
         retry = 5
         succeeded = False
@@ -128,7 +129,7 @@ def test_led_toggle(args, pyb):
 
         if _success and not success: _success = False
 
-        cmds = ["upyb_server_01.server.cmd({{'method': 'led_toggle', 'args': {{ 'led': {}, 'on_ms': 0 }} }})".format(pyb.LED_RED)]
+        cmds = ["upyrpc_main.upyrpc.cmd({{'method': 'led_toggle', 'args': {{ 'led': {}, 'on_ms': 0 }} }})".format(LED_RED)]
 
         success, result = pyb.server_cmd(cmds, repl_enter=False, repl_exit=False)
         logging.info("{} {}".format(success, result))
