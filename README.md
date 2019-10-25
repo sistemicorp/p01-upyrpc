@@ -191,6 +191,18 @@ True
 In step 2 above, with verbosity set, you can see the commands being sent to the server.  Copy and paste
 those commands in the REPL for debugging.
 
+## Future
+
+Things on the TODO list,
+
+1) Rewrite the CLI... its not pretty.
+2) Re-implement the target server using the `uasyncio` library instead of threads.  I did attempt to
+do this but got stuck because starting the `uasyncio` loop is a function that never returns, and thus
+access to the target via REPL is not possible.
+3) The server has plumbing for calls to peek at the command/return queues and manipulate them.  Most of that
+functionality I have never used, so it may not work as expected.
+4) Add unit testing.
+
 ---
 MIT License
 
