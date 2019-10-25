@@ -75,7 +75,7 @@ On the PC side, `UPYRPC.py` has the class *UPYRPC* which constructs the commands
 ```
 This pattern is used for most commands that will return right away with a result.
 
-For commands that perform long running tasks on the target, you will need to poll the target with,
+For commands that perform long running tasks on the target, you will need to poll the target with a pattern like this,
 ```
 success, result = pyb.long_running_example(5)
 logging.info("{} {}".format(success, result))
@@ -90,7 +90,7 @@ if success:
             done = True
 ```
 
-Example testing with the CLI,
+Example testing the `long_running_example` with the CLI,
 ```
 $ python3 UPYRPC_cli.py --port /dev/ttyACM0 misc --400
            UPYRPC.py   INFO  190 True []
@@ -105,6 +105,19 @@ $ python3 UPYRPC_cli.py --port /dev/ttyACM0 misc --400
 
 ```
 You may also try adding the `-v` flag to the CLI command above to see all that is going on.
+
+### Extending
+
+Extending (adding methods to RPC to) involves three steps,
+
+1) Create the method in `upyroc_main.py:uPyRPC()`.  Follow the other methods for signature.
+Don't forget to put something in the return queue before your method ends.
+
+2) Create a PC side "wrapper" for the new method in `UPYRPC.py:UPYRPC()`. Document the API here.
+So as much argument checking here as possible.  The server should not have to validate arguments,
+although the code currently does some now.
+
+3) Update `UPYRPOC_cli.py` to test your new method.
 
 ## Debugging
 
@@ -142,7 +155,8 @@ $ python3 UPYRPC_cli.py --port /dev/ttyACM0 -v misc --200
 As you will notice, the line numbers on the MicroPython side need to be manually entered... one day this could be
 automated with a script.
 
-3. Test with the REPL.  Here is a typical session,
+3. Test with the REPL.  This is the only way you will find out if there is a syntax error in your code - so basically that
+means you SHOULD do this FIRST before trying the CLI.  Here is a typical session,
 
 ```
 $ rshell
