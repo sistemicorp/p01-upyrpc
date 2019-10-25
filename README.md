@@ -75,6 +75,15 @@ On the PC side, `UPYRPC.py` has the class *UPYRPC* which constructs the commands
 ```
 This pattern is used for most commands that will return right away with a result.
 
+### Long Running Target Tasks
+
+On MicroPython there are two ways to implement a long running task that won't block the server.  Both
+approaches are used in the code.  
+
+First approach is to use a new thread.  See `long_running_example` method.
+
+Second is to schedule a function, using `micropython.schedule()` which is used by `adc_read_multi` method.
+
 For commands that perform long running tasks on the target, you will need to poll the target with a pattern like this,
 ```
 success, result = pyb.long_running_example(5)
@@ -114,7 +123,7 @@ Extending (adding methods to RPC to) involves three steps,
 Don't forget to put something in the return queue before your method ends.
 
 2) Create a PC side "wrapper" for the new method in `UPYRPC.py:UPYRPC()`. Document the API here.
-So as much argument checking here as possible.  The server should not have to validate arguments,
+Do as much argument checking here as possible.  The server should not have to validate arguments,
 although the code currently does some now.
 
 3) Update `UPYRPOC_cli.py` to test your new method.
@@ -129,10 +138,10 @@ extensions with this tool, outside of any other development you are doing.
 2. There are debug prints available on the MicroPython side, they look like this,
 
 ```
-        self._debug("testing message", 164, __DEBUG_FILE, "version")  # note line number is manually set
+self._debug("testing message", 164, __DEBUG_FILE, "version")  # note line number is manually set
 ```
-You can see this line in `upyrpc_main.py` line 164.  And if you run the cli with verbosity set, you will 
-see this debug line printed,
+You can see this line in `upyrpc_main.py` line 164.  And if you run the CLI with verbosity set, you will 
+see this debug line printed (PYBOARD_DEBUG),
 
 ```
 $ python3 UPYRPC_cli.py --port /dev/ttyACM0 -v misc --200
@@ -198,7 +207,8 @@ Things on the TODO list,
 1) Rewrite the CLI... its not pretty.
 2) Re-implement the target server using the `uasyncio` library instead of threads.  I did attempt to
 do this but got stuck because starting the `uasyncio` loop is a function that never returns, and thus
-access to the target via REPL is not possible.
+access to the target via REPL is not possible.  Using `uasyncio` is also likely to make long running
+tasks co-operate much better than currently implemented.
 3) The server has plumbing for calls to peek at the command/return queues and manipulate them.  Most of that
 functionality I have never used, so it may not work as expected.
 4) Add unit testing.
