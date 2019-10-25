@@ -43,28 +43,67 @@ $ python3 UPYRPC_cli.py --port /dev/ttyACM0 --all
 
 ## Usage
 
-Have a look at `UPYRPC_cli.py` code.
+Have a look at `UPYRPC_cli.py` code.  Its not well done, but it shows how all RPC methods are called.
 
 The code pattern looks like this,
 
 ```
-    port = "/dev/ttyACM0"
-    pyb = UPYRPC(port)
-    success, result = pyb.start_server()
-    # check for success, and error handle...
+port = "/dev/ttyACM0"
+pyb = UPYRPC(port)
+success, result = pyb.start_server()
+# check for success, and error handle...
 
-    success, result = pyb.version()
-    logging.info("{} {}".format(success, result))
+success, result = pyb.version()
+logging.info("{} {}".format(success, result))
 
-    # ... any other commands...
+# ... any other commands...
 
-    pyb.close()
+pyb.close()
 ```
 
 ### How It Works
 
-On the PC side, `UPYRPC.py` has the class *UPYRPC* which constructs the commands.  These look like,
+On the MicroPython side there is a "server".  The PC side begins by connecting to the target and opening a REPL connection
+over the serial port.  Entering REPL causes a soft reset.  Starting the server happens by `exec` a command via the ampy
+PyBoard object to `import upyrpc_main`, which creates an instance of the `UPYRPC` class, and creates a thread of the
+`self._run()` method.  This is the server's infinite loop that processes commands found in the command queue.
 
+```
+upyrpc = uPyRPC(debug=True)
+_thread.start_new_thread(upyrpc._run, ())
+```
+To put commands into the command queue, the `upyrpc.cmd(rpc_dict)` api is used.  Where rpc_dict looks like
+`{"method": <class_method>, "args": {<args>}}`.  The rpc_dict is built on the PC side with the *UPYRPC* class,
+which is effectively just a class with wrapper functions to hide the creation of the rpc_dict. You can create the
+rpc_dic manually, and there is an example of that in `UPYRPC_cly.py` for the `test_led_toggle` test.  But don't
+do things that way, that was done for development.  But it does show how you can use,
+```
+success, result = pyb.server_cmd(cmds, repl_enter=False, repl_exit=False)
+```
+To put commands into the command queue on the target server.
+
+After the command is queued, the previously mentioned server `self._run()` method will eventually pull it from the
+command queue and run it.  All RPC methods have the signature,
+```
+def long_running_example(self, args):
+```
+Where `args` will be the rpc_dict\[args\] part of the command, mentioned above.  Thus any number of arguments
+can be supplied, via keywords.
+
+Return values are handled in a similar way.  Every RPC method is expected to put a return dict onto the return queue.
+Putting a return dict on the return queue, looks like,
+```
+self._ret.put({"method": "long_running_example", "value": {'data': 'whatever'}, "success": True})
+```
+This return value dictionary includes the method name, this is so the PC side can fetch only return
+values from methods it is interested in, for example, polling for a specific method to complete.  All return
+values in the return queue have a method name.  **It is required that the client, the PC, poll for every
+method return value for every method that it calls**.  Otherwise the return queue could get full and die.
+On the PC side, the client class has a helper function, `self._verify_single_cmd_ret(c)` that does this
+work for you and is used in all the wrappers created in `UPYRPC.py`.
+
+On the PC side, `UPYRPC.py` has the class *UPYRPC* which constructs the commands via wrappers to the
+RPC methods on the server.  These look like,
 ```
     def led_toggle(self, led, on_ms=500, off_ms=500, once=False):
         """ toggle and LED ON and then OFF
@@ -78,6 +117,9 @@ On the PC side, `UPYRPC.py` has the class *UPYRPC* which constructs the commands
         return self._verify_single_cmd_ret(c)
 ```
 This pattern is used for most commands that will return right away with a result.
+
+So in a nutshell, the example code in the Usage section above is all you need to send commands to the
+PyBoard as a slave to the PC.
 
 ### Long Running Target Tasks
 
