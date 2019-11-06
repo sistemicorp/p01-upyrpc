@@ -4,14 +4,17 @@ An RPC framework for MicroPython.  I couldn't find one so I made this.  It is no
 on standard RPC frameworks because I am not familiar with any.
 
 Only tested on PyBoard v1.1 running `pybv11-thread-20190730-v1.11-182-g7c15e50eb.dfu`.
+Only tested on PC running Ubuntu 18, Python 3.6.
 
 The server RPC can be blocking or non-blocking.
 
 ## Installation
 
-1. Install requirements.txt via pip3.
+1. The PyBoard must be running MicroPython with thread support.
 
-2. Copy all the files in `./target` onto the PyBoard using `rshell` or `ampy`.
+2. Install requirements.txt via pip3 on the PC side.
+
+3. Copy all the files in `./target` onto the PyBoard using `rshell` or `ampy`.
 
 ```
 $ ampy --port /dev/ttyACM0 put target/upyrpc_const.py
@@ -20,7 +23,7 @@ $ ampy --port /dev/ttyACM0 put target/upyrpc_queue.py
 $ ampy --port /dev/ttyACM0 put target/upyrpc_main.py
 ```
 
-3. Test it via the command line interface,
+4. Test it via the command line interface,
 ```
 $ python3 UPYRPC_cli.py --port /dev/ttyACM0 misc --200
            UPYRPC.py   INFO  190 True []
@@ -36,7 +39,7 @@ $ python3 UPYRPC_cli.py --port /dev/ttyACM0 adc --100
        UPYRPC_cli.py   INFO  174 True {'success': True, 'value': {'value': 1.20315, 'samples': 1}, 'method': 'adc_read'}
        UPYRPC_cli.py   INFO  329 all tests passed
 ```
-4. Run all the tests,
+5. Run all the tests,
 ```
 $ python3 UPYRPC_cli.py --port /dev/ttyACM0 --all
 ```
@@ -244,7 +247,11 @@ True
 >>>
 ```
 In step 2 above, with verbosity set, you can see the commands being sent to the server.  Copy and paste
-those commands in the REPL for debugging.
+those commands in the REPL for debugging.  In the above session, `upyrpc_main.upyrpc.ret(method='version')` had
+to be executed twice before the expected return object was retrieved.  This is because debug statements
+in the return queue are always returned, no matter what method was requested.  Note the `ret()` supports getting
+all the return objects at once which may suite your needs better.
+
 
 ## Future
 
@@ -258,6 +265,10 @@ tasks co-operate much better than currently implemented.
 3) The server has plumbing for calls to peek at the command/return queues and manipulate them.  Most of that
 functionality I have never used, so it may not work as expected.
 4) Add unit testing.
+5) Improvements on "wrapping" PyBoard functions.  The code herein provides a few functions for
+setting, reading GPIOs, ADC, LED, and PWM.  For a particular application, you probably should discard
+these and just code what you need.  Consider whats provided as working examples.  True RPC would
+have it such that the methods would be exactly as if running on PyBoard, but that is not this.
 
 ---
 MIT License
